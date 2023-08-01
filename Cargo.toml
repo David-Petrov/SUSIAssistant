@@ -1,0 +1,21 @@
+[package]
+name = "susi"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cookie_store = "0.20.0"
+reqwest = "0.11.18"
+reqwest_cookie_store = "0.6.0"
+tokio = {version = "1.29.1", features = ["full"]}
+scraper = "0.17.1"
+
+[[bin]]
+name = "susi"
+path = "src/main.rs"
+
+[lib]
+name = "susi"
+path = "src/lib.rs"
