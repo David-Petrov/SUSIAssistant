@@ -58,11 +58,11 @@ where
       
     valid_category_requirements.iter()
       .sorted_by_cached_key(|(_, count)| **count)
-      .map(|(cats, _)| {
+      .flat_map(|(cats, _)| {
           let new_arrangement = {
             let mut arrangement = arrangement.clone();
             
-            if let Some(this_cats_left_count) = arrangement.get_mut(&cats) {
+            if let Some(this_cats_left_count) = arrangement.get_mut(cats) {
               this_cats_left_count.append(&mut Map::from([course_with_cats.clone()]));
             } else {
               arrangement.insert(cats.clone(), Map::from([course_with_cats.clone()]));
@@ -88,7 +88,6 @@ where
 
           go(new_arrangement, rest_courses_with_cats.clone(), new_category_requirements)
         })
-      .flatten()
       .collect::<Vec<_>>()
   }
 

@@ -19,6 +19,8 @@ anyhow = "1.0.75"
 futures = "0.3.28"
 ngrammatic = "0.4.0"
 dotenvy = "0.15.7"
+strum = "0.25"
+strum_macros = "0.25"
 
 [[bin]]
 name = "susi"
