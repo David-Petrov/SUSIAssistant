@@ -61,6 +61,27 @@ pub enum ElectiveCategory {
   Other,
 }
 
+impl std::fmt::Display for ElectiveCategory {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    use ElectiveCategory::*;
+
+    let string = match self {
+      Informatics => "Информатика",
+      Practicum => "Практикум",
+      Maths => "Математика",
+      AppliedMaths => "Приложна математика",
+      CompSciFundamentals => "ОКН",
+      CompSciCore => "ЯКН",
+      Statistics => "Статистика",
+      Seminar => "Семинар",
+      Humanitarian => "Хуманитарни",
+      Other => "Други",
+    };
+    
+    write!(f, "{}", string)
+  }
+}
+
 impl ElectiveCategory {
   //quick fix with static enumeration for all values
   //avoiding the dependency on strum
@@ -185,11 +206,8 @@ impl ElectiveCourse {
 
 /** PARSING NA SPISUKA S IZBIRAEMITE */
 pub async fn fetch_elective_page_from_fmi_site(url: String) -> Result<Vec<ElectiveCourse>> {
-  let cookie_store = reqwest_cookie_store::CookieStore::new(None);
-  let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
-  let cookie_store = std::sync::Arc::new(cookie_store);
+  
   let client = reqwest::Client::builder()
-      .cookie_provider(std::sync::Arc::clone(&cookie_store))
       .build()
       .unwrap();
 
@@ -326,24 +344,4 @@ pub fn parse_year_url_config() -> Result<HashMap<(u16, Semester), String>> {
   };
 
   Ok(result)
-
-  // if let Value::Object(obj) = config {
-  //   for (year, value) in obj {
-  //     if 
-  //     // let categories: Vec<ElectiveCategory>;
-
-  //     // if key == "_" {
-  //     //   categories = ElectiveCategory::iterator().cloned().collect::<Vec<_>>();
-  //     // } else if let Some(c) = parse_categories(&key) {
-  //     //   categories = c;
-  //     // } else {
-  //     //   bail!("Wrong format of category configuration file.");
-  //     // }
-
-  //     // if let Some(num) = value.as_u64() {
-  //     //   values.insert(categories, num as u32);
-  //     // }
-  //   }
-  //   values
-  // }
 }
