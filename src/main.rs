@@ -1,37 +1,44 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet, BTreeMap, BTreeSet};
 use std::fs::OpenOptions;
 use std::io::Write;
+use std::env;
+use itertools::Itertools;
+// use nucleo::{self, MatcherConfig};
+use ngrammatic::{CorpusBuilder, Pad, SearchResult};
 
 use reqwest::{cookie::CookieStore, header::HeaderMap};
 use reqwest::header;
+use dotenvy::dotenv;
+use scraper::{self, Element};
+use susi::common::*;
+use susi::*;
 
-use scraper;
+use anyhow::{anyhow, Result, bail, Context};
 
-async fn fetch() -> Result<String, reqwest::Error> {
+use std::hash::{Hash, Hasher};
+
+async fn fetch() -> Result<String> {
+  dotenv()?;
+
     // Load an existing set of cookies, serialized as json
-  let cookie_store = reqwest_cookie_store::CookieStore::new(None);
-  let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
-  let cookie_store = std::sync::Arc::new(cookie_store);
-  // {
-  //   // Examine initial contents
-  //   println!("initial load");
-  //   let store = cookie_store.lock().unwrap();
-  //   for c in store.iter_any() {
-  //     println!("{:?}", c);
-  //   }
-  // }
-  
+  // let cookie_store = reqwest_cookie_store::CookieStore::new(None);
+  // let cookie_store = reqwest_cookie_store::CookieStoreMutex::new(cookie_store);
+  // let cookie_store = std::sync::Arc::new(cookie_store);
   
   // Build a `reqwest` Client, providing the deserialized store
   let client = reqwest::Client::builder()
       // .cookie_store(true)
-      .cookie_provider(std::sync::Arc::clone(&cookie_store))
+      .cookie_store(true)
+      // .cookie_provider(std::sync::Arc::clone(&cookie_store))
       .build()
       .unwrap();
     
+  let username = env::var("SUSI_USERNAME").context("No `SUSI_USERNAME` in .env")?;
+  let password = env::var("SUSI_PASSWORD").context("No `SUSI_PASSWORD` in .env")?;
+    
   let form = HashMap::from([
-    ("txtUserName", "davidap"), 
-    ("txtPassword", "78603ghjAaBb!."),
+    ("txtUserName", username.as_str()),
+    ("txtPassword", password.as_str()),
     ("__EVENTVALIDATION", "/wEdAASvVXD1oYELeveMr0vHCmYPY3plgk0YBAefRz3MyBlTcHY2+Mc6SrnAqio3oCKbxYY85pbWlDO2hADfoPXD/5tdTuv7w4ACnajvAfo6U9t/biWbGiT2XZmQEcBPUoPMug0="),
     ("__VSTATE", "eJz7z8ifws%2fKZWhsamBhYWBgYsmfIsaUhkKIMDHyizHJsYdlFmcm5aRmpDAxA%2fnyDEAGKz%2b%2fGIscv0d%2bUWZVfl5JYo5jTmZ6HreWZnBlcUlqrl54apJeqCeIcgZKF%2bXnFOuhqWWSY4lXDHZiamgQAFoHtAlkFUtIakVJakoKEzvIfHlGbm0WJnkmFDXyzCB5TgLy3ATkeWEe4SegUBCmUJgfykoBAMHgO5k%3d"),
     ("__EVENTTARGET", ""),
@@ -39,41 +46,34 @@ async fn fetch() -> Result<String, reqwest::Error> {
     // ("__VIEWSTATE", ""),
     ("btnSubmit", "Влез")
     ]);
-  let mut headers = HeaderMap::new();
+  // let mut headers = HeaderMap::new();
   // let session_cookie = cookie_store.cookies(&reqwest::Url::parse("https://susi.uni-sofia.bg").unwrap());
   // headers.insert(header::COOKIE, session_cookie.unwrap());
-  headers.insert(header::ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7".parse().unwrap());
-  headers.insert(header::CACHE_CONTROL, "max-age=0".parse().unwrap());
-  headers.insert(header::CONNECTION, "keep-alive".parse().unwrap());
-  headers.insert(header::CONTENT_TYPE, "application/x-www-form-urlencoded".parse().unwrap());
-  headers.insert(header::USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36".parse().unwrap());
+  // headers.insert(header::ACCEPT, "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7".parse().unwrap());
+  // headers.insert(header::CACHE_CONTROL, "max-age=0".parse().unwrap());
+  // headers.insert(header::CONNECTION, "keep-alive".parse().unwrap());
+  // headers.insert(header::CONTENT_TYPE, "application/x-www-form-urlencoded".parse().unwrap());
+  // headers.insert(header::USER_AGENT, "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36".parse().unwrap());
   // headers.insert(header::DNT, "1".parse().unwrap());
 
   let req = 
     client.post("https://susi.uni-sofia.bg/ISSU/forms/Login.aspx")
     .form(&form)
-    .headers(headers);
+    ;//.headers(headers);
 
   let res = req.send().await?;
   // println!("{:?}", res);
   let text = res.text().await?;
-  if text.contains("Давид") {
-    println!("Logged in!");
-  } else {
-    println!("Fail!");
-  }
-  // println!("{:?}", res.text().await.unwrap());
-
   
-  // //PRINT CONTENTS
-  // {
-  //   // Examine the contents of the store.
-  //   let store = cookie_store.lock().unwrap();
-  //   for c in store.iter_any() {
-  //     println!("{:?}", c);
-  //   }
-  // }
-
+  // TODO: choose another way to ensure logged-in status
+  if text.contains("Вход за студенти в студентска информационна система") {
+    let html = scraper::Html::parse_document(text.as_str());
+    let msg_selector = scraper::Selector::parse("#PageError1_lblError").unwrap();
+    let msg = html.select(&msg_selector).next().unwrap().text().collect::<String>();
+    println!("Failed to log in. Message from susi: {}", msg);
+    bail!("Exiting.")
+  }
+  
   let form = HashMap::from([
     ("__EVENTTARGET", "Report_Exams1$btnReportExams"),
     ("Report_Exams1:chkTaken", "on"),
@@ -85,49 +85,194 @@ async fn fetch() -> Result<String, reqwest::Error> {
   let req = client
     .post("https://susi.uni-sofia.bg/ISSU/forms/students/ReportExams.aspx")
     .form(&form)
-    .header(reqwest::header::COOKIE, cookie_store.cookies(&reqwest::Url::parse("https://susi.uni-sofia.bg").unwrap()).unwrap());
+    ;//.header(reqwest::header::COOKIE, cookie_store.cookies(&reqwest::Url::parse("https://susi.uni-sofia.bg").unwrap()).unwrap());
   // println!("{:?}", req);
   let res = req.send().await?;
   let text = res.text().await?;
   Ok(text)
 }
 
-struct Course {
-  name: String,
-  tutor: Option<String>,
-  is_elective: bool,
-  is_passed: bool,
-  grade: Option<u8>,
-  ects: u8,
-}
 
 
 #[tokio::main]
-async fn main() -> Result<(), reqwest::Error>{
-  let text = include_str!("../thing.html");
-  if text.contains("Runtime Error") {
-    println!("ERROR WE NE STAA");
-  } else {
-    println!("Q, STANA");
-  }
+async fn main() -> Result<()>{
+  let text = fetch().await?;//include_str!("../thing.html");
+  let text = text.as_str();
+  
   let mut file = OpenOptions::new().write(true).open("thing.html").unwrap();
   file.write_all(text.as_bytes()).expect("Unable to write file!");
 
   //START PARSING
   let html = scraper::Html::parse_document(text);
-  let selector = scraper::Selector::parse("table table table").unwrap();
 
-  for element in html.select(&selector) {
-    println!("{:?}", element.select(&scraper::Selector::parse("tr:not(.greyType2)").unwrap())
-      .skip(1)
-      .map(|tr| {
-        let t = tr.text().map(|td| td.trim_matches(char::is_whitespace)).filter(|td| !td.is_empty()).collect::<Vec<_>>();
-        println!("{:?}", t);
-        t
-      })
-      .count()
-    );
+  let selector = scraper::Selector::parse("tbody").unwrap();
+  let my_table = html.select(&selector).max_by_key(|tbody| tbody.children().count()).unwrap();
+  let year_trs_selector = scraper::Selector::parse(":scope > tr:nth-child(6n+1)").unwrap();
+  let year_trs = my_table.select(&year_trs_selector);
+
+  let mut courses = Vec::<Course>::new();
+
+  for tr in year_trs {
+    let year_string = tr.text().collect::<String>().replace(char::is_whitespace, "");
+    
+    if !year_string.starts_with("Година:") {
+      continue;
+    }
+
+    let year = year_string.split(&[':', '/'][..]).map(String::from).collect::<Vec<_>>().get(1).unwrap().clone().parse::<u16>().unwrap();
+    // println!("For year {}: \n", year);
+    
+    let tbl = tr.next_sibling_element().unwrap();//tr.select(&adj_tbl_sel).next().unwrap();
+    let semester_tables_sel = scraper::Selector::parse(":scope table table").unwrap();
+    let semester_tables = tbl.select(&semester_tables_sel);
+
+    for (semester_index, semester_table) in semester_tables.enumerate() {
+      let semester = ExamSession::from_susi_index(semester_index as u8)?;
+
+      // println!("Za sem: {semester:?}: \n");
+
+      let tr_sel = scraper::Selector::parse(":scope tr:not(.greyType2)").unwrap(); //TVA ZAKVO ISKA :SCOPE?????
+
+      let td_sel = scraper::Selector::parse("td").unwrap();
+      let trs = 
+        semester_table.select(&tr_sel)
+        .skip(1)
+        .filter(|tr| tr.text().any(|td| !td.chars().all(char::is_whitespace)))
+        .map(|tr| {
+          // let t = tr.text().map(|td| td.trim_matches(char::is_whitespace)).collect::<Vec<_>>();
+          let t = tr
+            .select(&td_sel)
+            .map(|td| 
+              td.text()
+              .collect::<String>()
+              .trim_matches(char::is_whitespace)
+              .to_string()
+            ).collect::<Vec<_>>();
+          t
+        });
+
+      let mut semester_courses = trs.map(|tr| Course::from_susi_row(year, semester, tr)).collect::<Result<Vec<_>, _>>()?;
+      courses.append(&mut semester_courses);
+
+    }
   }
+  // courses.iter().for_each(|c| {dbg!(c);});
+  let electives_susi = courses.into_iter().filter(|c| c.is_elective && c.is_passed).collect::<Vec<_>>();
+
+  //COURSES HAVE BEEN FETCHED & PARSED
+  //STARTING TO CALCULATE CATEGORIES
+  // let year_semesters = electives_susi.iter().map(|c| (c.year, c.semester))
+
+  let electives_with_categories: HashSet<ElectiveCourse> = fetch_all_elective_pages_from_fmi_site().await?;
+
+  //fuzy match cat names
+  let mut corpus = CorpusBuilder::new()
+    .arity(2)
+    .pad_full(Pad::Auto)
+    .finish();
+  let known_cats = electives_with_categories.iter().map(|c| c.name.clone());
+  
+  for cat in known_cats {
+    corpus.add_text(&cat);
+  }
+
+  // type SusiFmiPair = (Course, ElectiveCourse);
+  //TODO: If a course already passed has vanished and must be sought in the archive from previous years' tables, we must scrape a bit more.
+  let courses_with_electives_cats = //(electives_susi_single_cat, electives_susi_multiple_cat): (Vec<SusiFmiPair>, Vec<SusiFmiPair>) = 
+    electives_susi.into_iter()
+      .map(|susi_course| {
+        let temp = electives_with_categories.iter()
+          .find(|fmi_elective_course| {
+            fmi_elective_course.name == susi_course.name
+          })// || (susi_course.name == "Увод в програмирането - практикум - спец. СИ" && fmi_elective_course.name == "Увод в програмирането - практикум"))
+          .or_else(|| {
+            let closest_match = corpus.search(susi_course.name.as_str(), 0.9).into_iter().next();
+            match closest_match {
+              None => {
+                println!("Warning! Course {} couldn't be found, so I'm ignoring it.", susi_course.name);
+                None
+              }
+              Some(SearchResult { text, similarity }) => {
+                println!("Closest match to {} is {} with similarity {}.", susi_course.name, text, similarity); //TODO: Prettify this message for end user
+                Some(electives_with_categories.iter().find(|c| c.name == text).unwrap())
+              }
+            }
+          })
+          .context(format!("Your elective {} hasn't been found in FMI's elective course table pages.", susi_course.name)) //TODO: has to do with the above comment
+          .map(|fmi_elective_course| (susi_course, (*fmi_elective_course).clone()));
+        temp
+      })
+      .filter_map(Result::ok)
+      .collect::<Vec<_>>();
+
+  // let kur = electives_susi.iter().find(|c| c.name == "Увод в програмирането - практикум - спец. СИ").unwrap().clone();
+
+  // let mut corpus = CorpusBuilder::new()
+  //   .arity(2)
+  //   .pad_full(Pad::Auto)
+  //   .finish();
+
+  // let known_cats = electives_with_categories.iter().map(|c| c.name.clone());
+  // for cat in known_cats {
+  //   corpus.add_text(&cat);
+  // }
+
+  // let result = corpus.search("Увод в програмирането - практикум - спец. СИ", 0.9);
+
+  // for k in courses_with_electives_cats {
+  //   if k.is_err() {
+  //     dbg!("hui");
+  //   }
+  // }
+
+  // let kur2 = kur.collect::<Result<Vec<_>>>()?;
+  let courses_with_cats = courses_with_electives_cats.into_iter().map(|(susi, fmi)| (susi, fmi.categories.clone().into_iter().collect::<BTreeSet<_>>())).collect::<Vec<_>>();
+  // dbg!(courses_with_cats);
+  let courses_with_cats = courses_with_cats.into_iter().collect::<BTreeMap<_, _>>();
+  let category_requirements = read_categories_config()?.into_iter().map(|(k, v)| (k.into_iter().collect::<BTreeSet<_>>(), v)).collect::<BTreeMap<_, _>>();
+      
+  let result = susi::course_arranger::calculate_arrangements(courses_with_cats, category_requirements);
+  let optimal = result.iter().min_by_key(|(_, (_, courses_left))| courses_left.len());
+  dbg!(optimal);
+      
+      
+      
+      
+      
+      
+      // .into_iter()
+      // .partition_map(|pair| {
+      //   use itertools::Either;
+      //   let fmi_elective_course = &pair.1;
+      //   match fmi_elective_course.categories[..] {
+      //     [_] => Either::Left(pair),
+      //     _ => Either::Right(pair),
+      //   }
+      // });
+
+  // let electives_susi_single_cat = electives_susi_single_cat.into_iter()
+  //   .map(|(susi, fmi)| (susi, fmi.categories[0]))
+  //   .collect::<Vec<_>>();
+
+
+  
+  // for (course, cat) in electives_susi_single_cat {
+    
+  // }
+      
+  
+    
+
+  
+  
+  //NOW WE START CALCULATING THE BROIKI PER CATEGORY
+  //starting with the easy part
+  
+
+  //remaining IS THE HARD PART
+  // let malka_rekursivna_funkciika = |electives_left: HashMap<Vec<ElectiveCourse>, u32>, categories_left: Vec<&ElectiveCourse>| {
+
+  // };
 
   Ok(())
 }

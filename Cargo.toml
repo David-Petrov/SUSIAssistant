@@ -2,6 +2,7 @@
 name = "susi"
 version = "0.1.0"
 edition = "2021"
+default-run = "susi"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -11,11 +12,28 @@ reqwest = "0.11.18"
 reqwest_cookie_store = "0.6.0"
 tokio = {version = "1.29.1", features = ["full"]}
 scraper = "0.17.1"
+itertools = "0.11.0"
+regex = "1.9.3"
+serde = "1.0.183"
+serde_json = "1.0.105"
+anyhow = "1.0.75"
+futures = "0.3.28"
+nucleo = "0.1.1"
+ngrammatic = "0.4.0"
+dotenvy = "0.15.7"
 
 [[bin]]
 name = "susi"
 path = "src/main.rs"
 
+[[bin]]
+name = "cat"
+path = "src/kategorii.rs"
+
+[[bin]]
+name = "conf"
+path = "src/izbiraemi.rs"
+
 [lib]
 name = "susi"
-path = "src/lib.rs"
+path = "src/lib/mod.rs"

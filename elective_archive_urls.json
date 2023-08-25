@@ -1,0 +1,25 @@
+{
+  "2022" :{
+    "Summer": "https://www.fmi.uni-sofia.bg/bg/node/9538",
+    "Winter": "https://www.fmi.uni-sofia.bg/bg/node/9414"
+  },
+  "2021": {
+    "Summer": "https://fmi.uni-sofia.bg/bg/svobodno-izbiraemi-disciplini-za-oks-bakalavr-leten-semestr-20212022#",
+    "Winter": "https://www.fmi.uni-sofia.bg/bg/node/9214"
+  },
+  "2020": {
+    "Summer": "https://www.fmi.uni-sofia.bg/bg/node/9074",
+    "Winter": "https://www.fmi.uni-sofia.bg/bg/svobodno-izbiraemi-disciplini-za-oks-bakalavr-zimen-semestr-20202021"
+  },
+  "2019": {
+    "Summer": "https://www.fmi.uni-sofia.bg/bg/svobodno-izbiraemi-disciplini-za-oks-bakalavr-leten-semestr-20192020#",
+    "Winter": "https://www.fmi.uni-sofia.bg/bg/svobodno-izbiraemi-disciplini-za-oks-bakalavr-zimen-semestr-20192020"
+  },
+  "2018": {
+    "Summer": "https://www.fmi.uni-sofia.bg/bg/node/8102",
+    "Winter": "https://www.fmi.uni-sofia.bg/bg/node/7906"
+  },
+  "2017": {
+    "Summer": "https://www.fmi.uni-sofia.bg/bg/node/7466"
+  }
+}
