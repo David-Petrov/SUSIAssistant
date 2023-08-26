@@ -97,7 +97,7 @@ where
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::common::*;
+  use crate::fmi_elective::*;
 
   #[test]
   fn test() {
@@ -115,7 +115,9 @@ mod tests {
     ]);
 
     let arrangements = calculate_arrangements(courses_with_cats, category_requirements);
+    let optimal_arrangement = arrangements.iter().min_by_key(|(_, (_, courses_left))| courses_left.len()).unwrap();
+    assert_eq!(0, optimal_arrangement.1.1.len())
 
-    println!("Optimal distribution: {:?}", arrangements.iter().min_by_key(|(_, (_, courses_left))| courses_left.len()));
+    // println!("Optimal distribution: {:?}", optimal_arrangement);
   }
 }

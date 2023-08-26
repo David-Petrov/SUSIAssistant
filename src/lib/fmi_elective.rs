@@ -1,54 +1,12 @@
 use std::{
-    collections::{HashMap, HashSet},
-    fs, str::FromStr,
+  collections::{HashMap, HashSet},
+  str::FromStr,
 };
 
 use anyhow::{anyhow, Error, Result, bail, Context};
 use futures::future::*;
-use itertools::Itertools;
 use regex::Regex;
-use serde_json::Value;
-use strum::IntoEnumIterator;
 use strum_macros::EnumIter;
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, Hash)]
-pub enum Semester {
-  Winter,
-  Summer,
-}
-
-impl FromStr for Semester {
-  type Err = Error;
-
-  fn from_str(s: &str) -> Result<Self> {
-    use Semester::*;
-
-    Ok(match s {
-      "Summer" => Summer,
-      "Winter" => Winter,
-      _ => bail!("Unknown semester string."),
-    })
-  }
-}
-
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub enum ExamSession {
-  Regular(Semester),
-  Elimination,
-}
-
-impl ExamSession {
-  pub fn from_susi_index(index: u8) -> Result<Self> {
-    use ExamSession::*;
-
-    Ok(match index {
-      0 => Regular(Semester::Winter),
-      1 => Regular(Semester::Summer),
-      2 => Elimination,
-      _ => bail!("Unknown exam session index."),
-    })
-  }
-}
 
 //FOR ELECTIVES
 #[derive(Debug, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy, EnumIter)]
@@ -121,20 +79,20 @@ pub struct ElectiveHorarium {
 impl ElectiveHorarium {
   fn from_triple([lecture, seminar, practicum]: [u8; 3]) -> Self {
     ElectiveHorarium { lecture, seminar, practicum }
-  }
+}
 
-  fn from_str(s: &str) -> Result<Self> {
-    let triple: [u8; 3] = s
-      .split('+')
-      .map(str::parse)
-      .collect::<Result<Vec<_>, _>>()
-      .context("Incorrect format of hours given.")?
-      .try_into()
-      // .context("Incorrect number of hour entries.")?;
-      .map_err(|err| anyhow!("Incorrect number of hour entries.\n {:?}", err))?;
+fn from_str(s: &str) -> Result<Self> {
+  let triple: [u8; 3] = s
+    .split('+')
+    .map(str::parse)
+    .collect::<Result<Vec<_>, _>>()
+    .context("Incorrect format of hours given.")?
+    .try_into()
+    // .context("Incorrect number of hour entries.")?;
+    .map_err(|err| anyhow!("Incorrect number of hour entries.\n {:?}", err))?;
 
-    Ok(Self::from_triple(triple))
-  }
+  Ok(Self::from_triple(triple))
+}
 }
 
 #[derive(Debug, Clone)]
@@ -215,7 +173,6 @@ impl ElectiveCourse {
 
 /** PARSING NA SPISUKA S IZBIRAEMITE */
 pub async fn fetch_elective_page_from_fmi_site(url: String) -> Result<Vec<ElectiveCourse>> {
-
   let client = reqwest::Client::builder()
       .build()
       .unwrap();
@@ -242,9 +199,11 @@ pub async fn fetch_elective_page_from_fmi_site(url: String) -> Result<Vec<Electi
   Ok(courses)
 }
 
+use crate::susi_course::Semester;
+
 pub async fn fetch_elective_pages_from_fmi_site(semesters: HashSet<(u16, Semester)>) -> Result<HashMap<(u16, Semester), Vec<ElectiveCourse>>> {
   join_all({
-      parse_year_url_config()?
+      crate::config::parse_elective_archive_urls_config()?
         .into_iter()
         .filter(|(sem, _)| semesters.contains(sem))
         .map(|(sem, url)| async move {
@@ -267,7 +226,7 @@ pub async fn fetch_elective_pages_from_fmi_site(semesters: HashSet<(u16, Semeste
 }
 
 pub async fn fetch_all_elective_pages_from_fmi_site() -> Result<HashSet<ElectiveCourse>> {
-  let year_semesters = parse_year_url_config()?.into_keys().collect::<HashSet<_>>();
+  let year_semesters = crate::config::parse_elective_archive_urls_config()?.into_keys().collect::<HashSet<_>>();
 
   let all_electives = fetch_elective_pages_from_fmi_site(year_semesters).await?
     .into_values()
@@ -275,86 +234,4 @@ pub async fn fetch_all_elective_pages_from_fmi_site() -> Result<HashSet<Elective
     .collect::<HashSet<_>>();
 
   Ok(all_electives)
-}
-
-/** PARSING NA KATEGORIIT OT KONFIGA */
-pub fn read_categories_config() -> Result<HashMap<Vec<ElectiveCategory>, u8>> {
-  let config_file =
-    fs::read_to_string("elective_categories_requirements.json")
-      .context("Failed to read elective categories requirements config file.")?;
-
-  let config: Value =
-    serde_json::from_str(&config_file)
-      .context("Failed to parse elective categories requirements config file.")?;
-
-  let mut values: HashMap<Vec<ElectiveCategory>, u8> = HashMap::new();
-
-  match config {
-    Value::Object(obj) => {
-      for (key, value) in obj {
-        let categories: Vec<ElectiveCategory> =
-          if key == "_" {
-            ElectiveCategory::iter().collect::<Vec<_>>()
-          } else if let Ok(c) = parse_categories(&key) {
-            c
-          } else {
-            bail!("Wrong format of category configuration file.")
-          };
-
-        if let Some(num) = value.as_u64() {
-          values.insert(categories, num as u8);
-        }
-      }
-
-      Ok(values.into_iter()
-        .sorted_by_cached_key(|(cats, _)| cats.len())
-        .collect())
-    },
-    _ => Err(anyhow!("Expected a simple object with category -> count mapping, wrong format.")),
-  }
-}
-
-fn parse_categories(key: &str) -> Result<Vec<ElectiveCategory>> {
-  key
-    .split('|')
-    .map(str::trim)
-    .map(ElectiveCategory::from_str)
-    .collect()
-}
-
-/** Parse the year -> url mapping from the config file for elective tables from FMI site */
-pub fn parse_year_url_config() -> Result<HashMap<(u16, Semester), String>> {
-  let config_file =
-    fs::read_to_string("elective_archive_urls.json")
-      .context("Failed to read elective archive urls config file.")?;
-
-  let config: Value =
-    serde_json::from_str(&config_file)
-      .context("Failed to parse elective archive urls config file.")?;
-
-  let mut result: HashMap<(u16, Semester), String> = HashMap::new();
-
-  let Value::Object(config_obj) = config else {
-    bail!("Wrong format; config object expected.");
-  };
-
-  for (year, semester_urls) in config_obj {
-    let year: u16 = year.parse().context("Wrong format of year key.")?;
-
-    let Value::Object(semester_urls_obj) = semester_urls else {
-      bail!("Wrong format; semester key expected.");
-    };
-
-    for (semester, url) in semester_urls_obj {
-      let semester = Semester::from_str(&semester)?;
-
-      let Value::String(url) = url else {
-        bail!("Wrong format; url string expected.");
-      };
-
-      result.insert((year, semester), url);
-    }
-  }
-
-  Ok(result)
 }

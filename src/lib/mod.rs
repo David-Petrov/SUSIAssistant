@@ -1,5 +1,5 @@
 pub mod course_arranger;
-pub mod common;
-mod susi_course;
-
-pub use susi_course::*;
+pub mod config;
+pub mod susi_course;
+pub mod fmi_elective;
+pub mod consts;
