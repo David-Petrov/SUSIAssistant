@@ -14,7 +14,7 @@ The SUSI assistant is meant for students at the Faculty of Mathematics and Infor
 ```json
 {
   "<ElectiveCategory1>": <Count1>,
-  "<ElectiveCategory2> [| <ElectiveCategory2> | ...]">: <Count2>,
+  "<ElectiveCategory2> [| <ElectiveCategory2> | ...]": <Count2>,
   ...
   "<ElectiveCategoryN>": <CountN>,
   ["_": <CountAnyCategory>] 
