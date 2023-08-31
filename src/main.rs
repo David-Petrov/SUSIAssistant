@@ -55,7 +55,7 @@ async fn main() -> Result<()>{
               }
               Some(SearchResult { text: name, similarity }) => {
                 println!("No exact match found for course '{}'.", susi_course.name);
-                println!("Closest match is '{}' with similarity '{}'.\n", name, similarity);
+                println!("Closest match is '{}' with similarity {}.\n", name, similarity);
 
                 // SAFETY: we are sure that there is such an elective course because
                 //         it is a result of a fuzzy match over all the courses' names
