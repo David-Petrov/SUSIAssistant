@@ -20,6 +20,7 @@ The SUSI assistant is meant for students at the Faculty of Mathematics and Infor
   ["_": <CountAnyCategory>] 
 }
 ```
+I've left my specialty's requirements configuration as an example to illustrate the idea.
 
 A comprehensive list of all `"ElectiveCategoryN"` keys is extracted directly from FMI's pages:
 | Ключ      | Категория |
