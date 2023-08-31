@@ -36,6 +36,54 @@ A comprehensive list of all `"ElectiveCategoryN"` keys is extracted directly fro
 |`"Х"`|Хуманитарни|
 |`"_"`|Placeholder for any of the listed above|
 
+- If everything with above configs is okay, simply execute the binary. You should see a detailed report in the standard output, something similar to mine:
+```
+No exact match found for course 'Увод в програмирането - практикум - спец. СИ'.
+Closest match is 'Увод в програмирането - практикум-спец.СИ' with similarity 0.96484375.
+
+No exact match found for course 'Обектно-ориентирано програмиране-практикум - сп. СИ'.
+Closest match is 'Обектно-ориентирано програмиране - практикум - спец. СИ' with similarity 0.97127265.
+
+[WARNING] Course 'Числени методи' couldn't be found, so I'm ignoring it.
+
+No exact match found for course 'Функционално програмиране-практикум'.
+Closest match is 'Функционално програмиране - практикум' with similarity 0.9775.
+
+
+Your optimal arrangement is:
+
+Практикум ->
+  'Обектно-ориентирано програмиране-практикум - сп. СИ' (Практикум)
+  'Функционално програмиране-практикум' (Практикум)
+
+Математика ->
+  'Състезателна математика II' (Математика)
+
+ОКН ->
+  'Функционално програмиране' (ОКН)
+
+ЯКН ->
+  'Съвременни Java технологии' (ЯКН)
+
+Математика | Приложна математика ->
+  'Алгебра 2' (Математика)
+  'Случайни процеси' (Приложна математика)
+
+ОКН | ЯКН ->
+  'Дълбоко обучение с Тензорфлоу' (ЯКН)
+  'Ламбда смятане и теория на доказателствата' (ОКН)
+
+Информатика | Практикум | Математика | Приложна математика | ОКН | ЯКН | Статистика | Семинар | Хуманитарни | Други ->
+  'Увод в програмирането - практикум - спец. СИ' (Практикум)
+
+
+Requirements left:
+
+  ОКН | ЯКН -> 2
+
+
+You have no unmapped courses, i.e. no courses left that couldn't fit in a category requirement.
+```
 
 ## How it works
 In general, the problem every FMI student faces once at the beginning of each semester regarding the normative for elective courses consists of: 
