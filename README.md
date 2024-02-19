@@ -23,19 +23,20 @@ The SUSI assistant is meant for students at the Faculty of Mathematics and Infor
 I've left my specialty's requirements configuration as an example to illustrate the idea.
 
 A comprehensive list of all `"ElectiveCategoryN"` keys is extracted directly from FMI's pages:
-| Ключ      | Категория |
-| ----------- | ----------- |
-| `"Д"`, `"Др."`      | Други       |
-| `"И"`   | Информатика        |
-|`"КП"`| Компютърен практикум|
-|`"М"`|Математика|
-|`"ПМ"`|Приложна математика|
-|`"ОКН"`|Основи на компютърните науки|
-|`"ЯКН"`|Ядро на компютърните науки|
-|`"Стат"`, `"Ст"`|Статистика|
-|`"С"`|Семинар|
-|`"Х"`|Хуманитарни|
-|`"_"`|Placeholder for any of the listed above|
+
+| Ключ                      | Категория                               |
+|---------------------------|-----------------------------------------|
+| `"Д"`, `"Др."`, `"Други"` | Други                                   |
+| `"И"`                     | Информатика                             |
+| `"КП"`                    | Компютърен практикум                    |
+| `"М"`                     | Математика                              |
+| `"ПМ"`                    | Приложна математика                     |
+| `"ОКН"`                   | Основи на компютърните науки            |
+| `"ЯКН"`                   | Ядро на компютърните науки              |
+| `"Стат"`, `"Ст"`          | Статистика                              |
+| `"С"`                     | Семинар                                 |
+| `"Х"`                     | Хуманитарни                             |
+| `"_"`                     | Placeholder for any of the listed above |
 
 - If everything with above configs is okay, simply execute the binary. You should see a detailed report in the standard output, something similar to mine:
 ```
