@@ -17,7 +17,7 @@ The SUSI assistant is meant for students at the Faculty of Mathematics and Infor
   "<ElectiveCategory2> [| <ElectiveCategory2> | ...]": <Count2>,
   ...
   "<ElectiveCategoryN>": <CountN>,
-  ["_": <CountAnyCategory>] 
+  ["_": <CountAnyCategory>]
 }
 ```
 I've left my specialty's requirements configuration as an example to illustrate the idea.
