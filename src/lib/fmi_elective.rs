@@ -125,6 +125,7 @@ impl PartialEq for ElectiveCourse {
 impl Eq for ElectiveCourse {}
 
 impl ElectiveCourse {
+    #[allow(clippy::get_first)]
     pub fn from_fmi_site_row(args: Vec<String>) -> Result<Self> {
         let department = args.get(0).ok_or(anyhow!("Department not found."))?.clone();
 
