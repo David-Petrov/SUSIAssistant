@@ -88,7 +88,7 @@ You have no unmapped courses, i.e. no courses left that couldn't fit in a catego
 ```
 
 ## How it works
-In general, the problem every FMI student faces once at the beginning of each semester regarding the normative for elective courses consists of: 
+In general, the problem every FMI student faces once at the beginning of each semester regarding the normative for elective courses consists of:
 - Checking the elective campaing for the upcoming semester and what courses are being offered
 - Checking the summary of already taken / passed courses
 - Opening the document with per-category requirements for the different elective categories
