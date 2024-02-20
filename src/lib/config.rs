@@ -51,14 +51,6 @@ pub fn read_categories_config() -> Result<HashMap<Vec<ElectiveCategory>, u8>> {
 fn parse_categories(key: &str) -> Result<Vec<ElectiveCategory>> {
     key.split('|')
         .map(str::trim)
-        .map(|cat| {
-            // BUG: edge case, gotta love consistency
-            if cat == "ПМСтат" {
-                "ПМ/Стат"
-            } else {
-                cat
-            }
-        })
         .map(ElectiveCategory::from_str)
         .collect()
 }

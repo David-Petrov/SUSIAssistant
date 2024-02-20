@@ -51,7 +51,7 @@ impl FromStr for ElectiveCategory {
         use ElectiveCategory::*;
 
         Ok(match s.trim() {
-            "Д" | "Др." => Other,
+            "Д" | "Др." | "Други" => Other,
             "И" => Informatics,
             "КП" => Practicum,
             "М" | "M" => Maths,
@@ -147,9 +147,22 @@ impl ElectiveCourse {
         let categories = {
             let re = Regex::new(r"\s*[/,]\s*").unwrap();
 
-            re.split({ args.get(4).ok_or(anyhow!("Category not found."))?.as_str() })
-                .map(ElectiveCategory::from_str)
-                .collect::<Result<Vec<_>>>()?
+            re.split(
+                args.get(4)
+                    .map(|cat| {
+                        // BUG: edge case, gotta love consistency
+                        if cat == "ПМСтат" {
+                            "ПМ/Стат"
+                        } else {
+                            cat
+                        }
+                        .to_string()
+                    })
+                    .ok_or(anyhow!("Category not found."))?
+                    .as_str(),
+            )
+            .map(ElectiveCategory::from_str)
+            .collect::<Result<Vec<_>>>()?
         };
 
         Ok(ElectiveCourse {
