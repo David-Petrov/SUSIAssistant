@@ -1,0 +1,3 @@
+- Add heuristic on what groups a course should be put into (currenly not giving *optimal* config)
+- Add ECTs summing
+- Add "mandatory"-elective courses calculation (separate FMI links)
