@@ -11,7 +11,7 @@ The SUSI assistant is meant for students at the Faculty of Mathematics and Infor
 - Create your own local copy of `.env.example` with the name `.env` where you enter your actual user name and password for FMI's SUSI.
 
 - Setup your specialty's requirements for elective courses in `elective_categories_requirements.json` according to the following scheme:
-```
+```json
 {
   "<ElectiveCategory1>": <Count1>,
   "<ElectiveCategory2> [| <ElectiveCategory2> | ...]": <Count2>,
